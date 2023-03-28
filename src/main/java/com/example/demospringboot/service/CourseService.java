@@ -6,19 +6,16 @@ import com.example.demospringboot.exception.NotFoundException;
 import com.example.demospringboot.model.Course;
 import com.example.demospringboot.model.CourseInfo;
 import com.example.demospringboot.model.CourseType;
-import com.example.demospringboot.model.request.CourseInfoRequest;
 import com.example.demospringboot.model.request.CourseRequest;
 import com.example.demospringboot.repository.ICourseRepository;
 import com.example.demospringboot.utils.CourseKey;
 import com.example.demospringboot.utils.specification.SearchCriteria;
 import com.example.demospringboot.utils.specification.Spec;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +23,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -52,14 +50,13 @@ public class CourseService {
         }
     }
 
-    public Course create(String course, MultipartFile file) {
+    public Course create(CourseRequest course) {
         try {
-            CourseRequest map = new ObjectMapper().readValue(course,CourseRequest.class);
-            CourseInfo courseInfo = modelMapper.map(map,CourseInfo.class);
+            CourseInfo courseInfo = modelMapper.map(course,CourseInfo.class);
             CourseInfo set = courseInfoService.save(courseInfo);
-            Optional<CourseType> find = courseTypeService.findById(map.getCourseType().getId());
-            Course save = modelMapper.map(map, Course.class);
-            String filePath = fileService.uploadFile(file);
+            Optional<CourseType> find = courseTypeService.findById(course.getCourseType().getId());
+            Course save = modelMapper.map(course, Course.class);
+            String filePath = fileService.uploadFile(course.getFile());
             save.setCourseType(find.get());
             save.setCourseInfo(set);
             save.setLink(filePath);
@@ -67,8 +64,6 @@ public class CourseService {
             return courseRepository.save(save);
         } catch (FailedToRunException e) {
             throw new FailedToRunException();
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -133,23 +128,9 @@ public class CourseService {
         List<Course> courses = courseRepository.findAll(specification);
         return courses;
     }
-//    public Course getJson(Course course, MultipartFile file){
-//        Course courseJson = new Course();
-//        try {
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            courseJson = objectMapper.readValue(course,Course.class);
-//            return courseJson;
-//        }catch (IOException e){
-//            throw new RuntimeException("Error " + e.getMessage());
-//        }
-//    }
-//    public Resource downloadById(Integer id){
-//        try {
-//            Optional<Course> find = courseTypeService.findById(id);
-//            Resource file = new UrlResource();
-//            return file;
-//        }catch (Exception e){
-//            throw new RuntimeException(e.getMessage());
-//        }
-//    }
+    public Resource downloadById(Integer id) throws MalformedURLException {
+        Optional<Course> find = courseRepository.findById(id);
+        return fileService.downloadFile(find.get().getLink());
+
+    }
 }

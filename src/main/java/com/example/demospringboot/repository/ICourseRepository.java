@@ -1,7 +1,6 @@
 package com.example.demospringboot.repository;
 
 import com.example.demospringboot.model.Course;
-import org.springframework.core.io.Resource;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,5 +17,4 @@ public interface ICourseRepository extends JpaRepository<Course, Integer> {
     List<Course> findByDescriptionContains(String description);
 
     List<Course> findAll (Specification specification);
-//    Resource downloadFileById(Integer id);
 }

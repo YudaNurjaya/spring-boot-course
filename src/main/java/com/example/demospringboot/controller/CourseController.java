@@ -1,26 +1,25 @@
 package com.example.demospringboot.controller;
 import com.example.demospringboot.model.Course;
 import com.example.demospringboot.model.request.CourseRequest;
-import com.example.demospringboot.model.request.FormDataWithFile;
 import com.example.demospringboot.model.response.SuccessResponse;
 import com.example.demospringboot.service.CourseService;
 import com.example.demospringboot.service.IFileService;
 import com.example.demospringboot.utils.constans.Operator;
 import com.example.demospringboot.utils.specification.SearchCriteria;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,8 +44,8 @@ public class CourseController {
     }
 
     @PostMapping
-    public ResponseEntity create(@RequestPart("course") String course,@RequestPart("file") MultipartFile file){
-        Course create = courseService.create(course, file);
+    public ResponseEntity create(CourseRequest course){
+        Course create = courseService.create(course);
         return ResponseEntity.status(HttpStatus.CREATED).body(new SuccessResponse<Course>("Success", create));
     }
 
@@ -77,5 +76,12 @@ public class CourseController {
         List<Course> courses = courseService.listBy(searchCriteria);
 
         return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse<>("Success get all course by", courses));
+    }
+    @GetMapping("/download/{id}")
+    public ResponseEntity downloadById(@PathVariable Integer id) throws MalformedURLException {
+        Resource file =  courseService.downloadById(id);
+        return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + file.getFilename())
+                .body(file);
     }
 }
